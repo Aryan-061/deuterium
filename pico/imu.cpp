@@ -1,25 +1,13 @@
 #include "imu.hpp"
 
-
 extern State state;
 
-static float roll0 = 0.0f;
-static float pitch0 = 0.0f;
-static float yaw0 = 0.0f;
+static const float alpha = 0.1f;
+static float wx_filt_last = 0.0f;
+static float wy_filt_last = 0.0f;
+static float wz_filt_last = 0.0f;
 
-static const float alpha = 0.1;
-static float wx_filt_last = 0;
-static float wy_filt_last = 0;
-static float wz_filt_last = 0;
-
-
-float wrapAngle(float a) {
-    while (a > M_PI) a -= 2 * M_PI;
-    while (a < -M_PI) a += 2 * M_PI;
-    return a;
-}
-
-uint8_t buffer[6];
+uint8_t buffer[8];
 
 void imu::init() {
 
@@ -44,75 +32,69 @@ void imu::init() {
 
     uint8_t data[2];
 
-    data[0] = 0x3D;     // OPR_MODE
-    data[1] = 0x00;     // CONFIG mode
+    /* CONFIG MODE */
+    data[0] = 0x3D;
+    data[1] = 0x00;
     i2c_write_blocking(BNO055_PORT, BNO055_ADDR, data, 2, false);
     sleep_ms(50);
 
-    data[0] = 0x3F;     // SYS_TRIGGER
-    data[1] = 0x40;     // internal oscillator
+    /* Internal oscillator */
+    data[0] = 0x3F;
+    data[1] = 0x40;
     i2c_write_blocking(BNO055_PORT, BNO055_ADDR, data, 2, false);
     sleep_ms(50);
 
-    data[0] = 0x3B;     // UNIT_SEL
-    data[1] = 0x06;     // gyro in rad/s
+    /* Units: gyro rad/s */
+    data[0] = 0x3B;
+    data[1] = 0x06;
     i2c_write_blocking(BNO055_PORT, BNO055_ADDR, data, 2, false);
     sleep_ms(50);
 
-    data[0] = 0x3D;     // OPR_MODE
-    data[1] = 0x08;     // IMU
+    /* NDOF_FMC_OFF */
+    data[0] = 0x3D;
+    data[1] = 0x0B;
     i2c_write_blocking(BNO055_PORT, BNO055_ADDR, data, 2, false);
     sleep_ms(500);
 
-    // read roll and pitch for lock values
-    uint8_t reg_euler = 0x1A;
-    i2c_write_blocking(BNO055_PORT, BNO055_ADDR, &reg_euler, 1, true);
-    i2c_read_blocking(BNO055_PORT, BNO055_ADDR, buffer, 6, false);
-    int16_t raw_roll0 = (int16_t)((buffer[3] << 8) | buffer[2]);
-    int16_t raw_pitch0 = (int16_t)((buffer[5] << 8) | buffer[4]);
-    int16_t raw_yaw0 = (int16_t)((buffer[1] << 8) | buffer[0]);
-    roll0 = (raw_roll0 / 900.0f);
-    pitch0 = (raw_pitch0 / 900.0f);
-
-    printf("Roll, Pitch, Yaw locked\n");
+    printf("IMU running in NDOF_FMC_OFF (quaternion output)\n");
 }
 
 void imu::update() {
 
-    uint8_t reg_euler = 0x1A;
-    i2c_write_blocking(BNO055_PORT, BNO055_ADDR, &reg_euler, 1, true);
-    i2c_read_blocking(BNO055_PORT, BNO055_ADDR, buffer, 6, false);
-    int16_t raw_roll = (int16_t)((buffer[3] << 8) | buffer[2]);
-    int16_t raw_pitch = (int16_t)((buffer[5] << 8) | buffer[4]);
-    int16_t raw_yaw = (int16_t)((buffer[1] << 8) | buffer[0]);
-    state.roll = (raw_roll / 900.0f);
-    state.pitch = (raw_pitch / 900.0f);
+    /* -------- Quaternion -------- */
+    uint8_t reg_quat = 0x20;
+    i2c_write_blocking(BNO055_PORT, BNO055_ADDR, &reg_quat, 1, true);
+    i2c_read_blocking(BNO055_PORT, BNO055_ADDR, buffer, 8, false);
 
-    state.roll = wrapAngle(state.roll - roll0);
-    state.pitch = wrapAngle(state.pitch - pitch0);
+    int16_t qw_raw = (int16_t)((buffer[1] << 8) | buffer[0]);
+    int16_t qx_raw = (int16_t)((buffer[3] << 8) | buffer[2]);
+    int16_t qy_raw = (int16_t)((buffer[5] << 8) | buffer[4]);
+    int16_t qz_raw = (int16_t)((buffer[7] << 8) | buffer[6]);
 
-    // Deadband for small angles
-    if (std::abs(state.roll) < 0.05f) state.roll = 0;
-    if (std::abs(state.pitch) < 0.05f) state.pitch = 0;
+    state.qw = qw_raw / 16384.0f;
+    state.qx = qx_raw / 16384.0f;
+    state.qy = qy_raw / 16384.0f;
+    state.qz = qz_raw / 16384.0f;
 
+    /* -------- Angular velocity -------- */
     uint8_t reg_gyro = 0x14;
     i2c_write_blocking(BNO055_PORT, BNO055_ADDR, &reg_gyro, 1, true);
     i2c_read_blocking(BNO055_PORT, BNO055_ADDR, buffer, 6, false);
+
     int16_t raw_wx = (int16_t)((buffer[1] << 8) | buffer[0]);
     int16_t raw_wy = (int16_t)((buffer[3] << 8) | buffer[2]);
     int16_t raw_wz = (int16_t)((buffer[5] << 8) | buffer[4]);
+
     state.wx = raw_wx / 900.0f;
     state.wy = raw_wy / 900.0f;
     state.wz = raw_wz / 900.0f;
 
+    /* -------- Low-pass filter -------- */
+    state.wx = alpha * state.wx + (1.0f - alpha) * wx_filt_last;
+    state.wy = alpha * state.wy + (1.0f - alpha) * wy_filt_last;
+    state.wz = alpha * state.wz + (1.0f - alpha) * wz_filt_last;
 
-    //low pass filter
-    state.wx = alpha * state.wx + (1 - alpha) * wx_filt_last;
-    state.wy = alpha * state.wy + (1 - alpha) * wy_filt_last;
-    state.wz = alpha * state.wz + (1 - alpha) * wz_filt_last;
     wx_filt_last = state.wx;
     wy_filt_last = state.wy;
     wz_filt_last = state.wz;
-
-    // printf("%f      %f      %f      %f      %f\n", state.roll, state.pitch, state.wx, state.wy, state.wz);
 }

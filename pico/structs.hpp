@@ -1,9 +1,17 @@
-#include <stdint.h>
 #pragma once
+#include <stdint.h>
 
 typedef struct {
-    float roll, pitch, yaw;
-    float wx, wy, wz;
+    // Orientation (quaternion)
+    float qw;
+    float qx;
+    float qy;
+    float qz;
+
+    // Angular velocity (body frame)
+    float wx;
+    float wy;
+    float wz;
 } State;
 
 typedef struct {

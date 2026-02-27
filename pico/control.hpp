@@ -1,5 +1,3 @@
-#include <stdlib.h> 
-#include <stdio.h>
 #include <cmath>
 #include <algorithm>
 #pragma once

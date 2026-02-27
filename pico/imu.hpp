@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <cmath>
 #include "structs.hpp"
-#include "config.hpp"
-#include "control.hpp"
+#include "config.hpp"  
 #pragma once
 
 
