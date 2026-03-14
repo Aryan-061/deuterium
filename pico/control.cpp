@@ -79,7 +79,7 @@ void control::update() {
 
     /* -------- Quaternion attitude error -------- */
 
-    /* -------- Capture startup reference -------- */
+   /* -------- Capture startup reference -------- */
     if (!ref_initialized) {
         qw_ref = state.qw;
         qx_ref = state.qx;
@@ -106,12 +106,32 @@ void control::update() {
     );
 
     quatNormalize(qw_err, qx_err, qy_err, qz_err);
-
+    //for smoother unit rotation
+    if (qw_err < 0.0f) {
+    qw_err = -qw_err;
+    qx_err = -qx_err;
+    qy_err = -qy_err;
+    qz_err = -qz_err;
+    }//q and -q represent the same rotation, the controller might suddenly command a 180 degree flip instead of a 2 degree correction
+     //this might cause violent motor jumps
     /* -------- Small-angle approximation -------- */
-    // local coordinates
-    float roll_err = 2.0f * qx_err;   // radians
-    float pitch_err = 2.0f * qy_err;   // radians
+    //local coordinates
+    //float roll_err = 2.0f * qx_err;   // radians
+    //float pitch_err = 2.0f * qy_err;   // radians
     //Around the current operating point, the attitude error behaves like a small rotation about X and Y
+    float angle = 2.0f * acosf(qw_err);
+    float s = sqrtf(1.0f - qw_err * qw_err);
+
+      float ex = 0.0f;
+      float ey = 0.0f;
+
+          if (s > 0.001f) {
+           ex = qx_err / s;
+           ey = qy_err / s;
+        }
+
+          float roll_err  = angle * ex;
+          float pitch_err = angle * ey;
    /* -------- Outer PID -------- */
 
     rollInt += roll_err * dt;
@@ -146,8 +166,27 @@ void control::update() {
     for (int i = 0; i < 3; i++) {
         u_smooth[i] = beta * u[i] + (1.0f - beta) * u_smooth[i];
     }
+// Deadband on final motor output — prevents dithering across the
+// forward/reverse boundary when the control output is near zero.
+// Values within ±MOTOR_DEADBAND are treated as stopped (DSHOT 1049 = zero throttle 3D).
+const float MOTOR_DEADBAND = 0.05f;  // tune this: start at 0.05, increase if dithering persists
 
-    throttle.VL = clampDSHOT(u_smooth[0] * 150);
-    throttle.VR = clampDSHOT(u_smooth[1] * 150);
-    throttle.VB = clampDSHOT(u_smooth[2] * 150);
+int vl, vr, vb;
+
+if (fabsf(u_smooth[0]) < MOTOR_DEADBAND) vl = 1049;
+else vl = clampDSHOT(u_smooth[0] * 150.0f);
+
+if (fabsf(u_smooth[1]) < MOTOR_DEADBAND) vr = 1049;
+else vr = clampDSHOT(u_smooth[1] * 150.0f);
+
+if (fabsf(u_smooth[2]) < MOTOR_DEADBAND) vb = 1049;
+else vb = clampDSHOT(u_smooth[2] * 150.0f);
+
+throttle.VL = (uint16_t)vl;
+throttle.VR = (uint16_t)vr;
+throttle.VB = (uint16_t)vb;
+
+   // throttle.VL = clampDSHOT(u_smooth[0] * 150);
+   // throttle.VR = clampDSHOT(u_smooth[1] * 150);
+    //throttle.VB = clampDSHOT(u_smooth[2] * 150);
 }
