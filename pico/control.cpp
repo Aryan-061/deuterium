@@ -2,6 +2,8 @@
 #include "structs.hpp"
 #include <cmath>
 #include "config.hpp"
+#include <stdio.h>
+
 //Quaternions give global attitude error, but we want local attitude error for control, 
 //we need to convert the global error to local error using quaternion math.
 //call quaternion math here to avoid separate quaternion math file and to keep all the control related code in one place
@@ -51,9 +53,9 @@ float pitchInt = 0;
 
 //inner loop LQR
 float K_lqr[3][2] = {
-  { 1.5, -1},
-  { -1.5, -1 },
-  { 0.0, 2.0 }
+  { 1.5, -1},  //Vl is positively affected by roll and negatively affected by pitch
+  { -1.5, -1 },// Vr is negatively affected by roll and negatively affected by pitch
+  { 0.0, 2.0 } // Vb is unaffected by roll and positively affected by pitch and twice as much as there is only one thruster behind the center of mass
 };
 const float U_MAX = 1.0;
 float u_smooth[3] = { 0, 0, 0 };
@@ -132,6 +134,8 @@ void control::update() {
 
           float roll_err  = angle * ex;
           float pitch_err = angle * ey;
+          state.roll = roll_err;
+          state.pitch = pitch_err;
    /* -------- Outer PID -------- */
 
     rollInt += roll_err * dt;
@@ -185,6 +189,7 @@ else vb = clampDSHOT(u_smooth[2] * 150.0f);
 throttle.VL = (uint16_t)vl;
 throttle.VR = (uint16_t)vr;
 throttle.VB = (uint16_t)vb;
+
 
    // throttle.VL = clampDSHOT(u_smooth[0] * 150);
    // throttle.VR = clampDSHOT(u_smooth[1] * 150);

@@ -12,6 +12,9 @@ typedef struct {
     float wx;
     float wy;
     float wz;
+    //Eulers for reference
+    float roll;
+    float pitch;
 } State;
 
 typedef struct {

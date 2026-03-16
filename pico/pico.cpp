@@ -48,8 +48,18 @@ int main(void) {
         NULL,
         &control_timer
     );
-
     while (1) {
+    if (control_flag) {
+        control_flag = false;
+        imu::update();
+        control::update();
+        esc::thrust();
+        printf("Throttle: VL=%4u  VR=%4u  VB=%4u | Roll: %.3f rad  Pitch: %.3f rad\n",
+               throttle.VL, throttle.VR, throttle.VB, state.roll, state.pitch);
+    }
+  }
+}
+/*   while (1) {
 
         if (control_flag) {
             control_flag = false;
@@ -62,4 +72,4 @@ int main(void) {
         esc::thrust();
     }
 
-}
+}*/
