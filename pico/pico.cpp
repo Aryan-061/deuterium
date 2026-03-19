@@ -43,7 +43,7 @@ int main(void) {
     printf("program initialised\n");
 
     add_repeating_timer_ms(
-        -100,                //100ms control loop
+        -AUV_STB_LOOP_MS,
         control_timer_cb,
         NULL,
         &control_timer

@@ -1,5 +1,8 @@
 #pragma once
 
+//stablization loop speed
+#define AUV_STB_LOOP_MS 100
+
 //BNO055
 #define BNO055_PORT i2c1
 #define BNO055_ADDR 0x28

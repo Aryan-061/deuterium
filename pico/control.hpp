@@ -4,6 +4,7 @@
 #include <algorithm>
 #pragma once
 #include "structs.hpp"
+#include "config.hpp"
 
 class control {
 public:

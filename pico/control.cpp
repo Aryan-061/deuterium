@@ -4,7 +4,7 @@
 extern State state;
 extern Throttle throttle;
 
-const float dt = 0.1;   // 100 ms control loop
+const float dt = AUV_STB_LOOP_MS / 1000;   // 100 ms control loop
 
 //outer loop PID
 float Kp_ang = 5.0;
