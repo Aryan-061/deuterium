@@ -1,19 +1,40 @@
 #include "raspi.hpp"
 
-extern RaspiRecFrame raspi_rec_frame;
+int recstate = 0;
+int recbuffindex = 0;
+uint8_t recbuff[18];
+
 
 void raspi::init() {
-    uart_init(RP_UARTID, RP_BAUDRATE);
-    gpio_set_function(RP_TX, GPIO_FUNC_UART);
-    gpio_set_function(RP_RX, GPIO_FUNC_UART);
+    uart_init(RASPI_UARTID, RASPI_BAUDRATE);
+    gpio_set_function(RASPI_TX, GPIO_FUNC_UART);
+    gpio_set_function(RASPI_RX, GPIO_FUNC_UART);
 }
 
 void raspi::update() {
-    raspi_rec_frame.sof = uart_getc(RP_UARTID);
-    raspi_rec_frame.dx = uart_getc(RP_UARTID);
-    raspi_rec_frame.dy = uart_getc(RP_UARTID);
-    raspi_rec_frame.dz = uart_getc(RP_UARTID);
-    raspi_rec_frame.dyaw = uart_getc(RP_UARTID);
-    raspi_rec_frame.crc0 = uart_getc(RP_UARTID);
-    raspi_rec_frame.crc1 = uart_getc(RP_UARTID);
+
+    while (uart_is_readable(RASPI_UARTID)) {
+        switch (recstate) {
+
+        case 0:
+            if (uart_getc(RASPI_UARTID) == RASPI_SOF0)
+                recstate = 1;
+            break;
+
+        case 1:
+            if (uart_getc(RASPI_UARTID) == RASPI_SOF1)
+                recstate = 2;
+            break;
+
+        case 2:
+            recbuff[recbuffindex] = uart_getc(RASPI_UARTID);
+            recbuffindex++;
+            if (recbuffindex >= 18) {
+                recbuffindex = 0;
+                recstate = 0;
+            }
+            break;
+
+        }
+    }
 }

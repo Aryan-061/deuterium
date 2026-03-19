@@ -2,15 +2,12 @@
 #pragma once
 
 typedef struct {
-    float roll, pitch, yaw;
+    float roll, pitch;
     float wx, wy, wz;
+    float dx, dy, dz, dyaw;
 } State;
 
 typedef struct {
     uint16_t VB, VR, VL, HR, HL;
     int zoffset;
 } Throttle;
-
-typedef struct {
-    uint8_t sof, dx, dy, dz, dyaw, crc0, crc1;
-} RaspiRecFrame;

@@ -17,7 +17,9 @@
 #define PIO_HL 9
 
 //RASPI UART 
-#define RP_TX 29
-#define RP_RX 28
-#define RP_BAUDRATE  115200
-#define RP_UARTID  uart0
+#define RASPI_TX 29
+#define RASPI_RX 28
+#define RASPI_BAUDRATE  115200
+#define RASPI_UARTID  uart0
+#define RASPI_SOF0 0xAA
+#define RASPI_SOF1 0x55

@@ -24,7 +24,6 @@ bool control_timer_cb(struct repeating_timer* t)
 
 State state;
 Throttle throttle = { 0, 0, 0, 0, 0, 0 };
-RaspiRecFrame raspi_rec_frame;
 
 int main(void) {
 
@@ -52,6 +51,8 @@ int main(void) {
     );
 
     while (1) {
+
+        raspi::update();
 
         if (control_flag) {
             control_flag = false;
