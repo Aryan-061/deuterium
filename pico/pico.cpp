@@ -11,6 +11,7 @@
 #include "imu.hpp"
 #include "control.hpp"
 #include "esc.hpp"
+#include "raspi.hpp"
 
 volatile bool control_flag = false;
 struct repeating_timer control_timer;
@@ -23,6 +24,7 @@ bool control_timer_cb(struct repeating_timer* t)
 
 State state;
 Throttle throttle = { 0, 0, 0, 0, 0, 0 };
+RaspiRecFrame raspi_rec_frame;
 
 int main(void) {
 
