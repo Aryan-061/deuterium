@@ -6,9 +6,15 @@
 #define BNO055_SDA  27
 #define BNO055_SCL  26
 
-//PIO pins of ESC
+//PIO of ESC
 #define PIO_VB 5
 #define PIO_VR 6
 #define PIO_VL 7
 #define PIO_HR 8
 #define PIO_HL 9
+
+//RASPI UART 
+#define RP_TX 29
+#define RP_RX 28
+#define RP_BAUDRATE  115200
+#define RP_UARTID  uart0
