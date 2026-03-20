@@ -14,6 +14,10 @@
 #include "raspi.hpp"
 
 volatile bool stb_flag = false;
+bool nav_data_flag = false;
+bool nav_time_out = true;       //starts is safe consdition
+absolute_time_t last_nav_data_time = get_absolute_time();
+
 struct repeating_timer control_timer;
 
 bool control_timer_cb(struct repeating_timer* t)
@@ -53,17 +57,25 @@ int main(void) {
 
     while (1) {
 
-        raspi::update();
-
         if (stb_flag) {
             stb_flag = false;
             imu::update();
             control::stbUpdate();
         }
 
-        control::navUpdate();
+        nav_data_flag = raspi::update();
 
-        printf("%d      %d      %d\n", throttle.VB, throttle.VR, throttle.VL);
+        if (nav_data_flag) {
+            last_nav_data_time = get_absolute_time();
+            nav_time_out = false;
+            control::navUpdate();
+        }
+        if (!nav_time_out && absolute_time_diff_us(last_nav_data_time, get_absolute_time()) > 500000) {
+            control::navStop();
+            nav_time_out = true;
+        }
+
+        // printf("%d      %d      %d\n", throttle.VB, throttle.VR, throttle.VL);
 
         esc::thrust();
     }

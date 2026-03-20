@@ -12,5 +12,5 @@ class raspi {
 public:
     static void init();
 
-    static void update();
+    static bool update();
 };

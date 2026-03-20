@@ -132,3 +132,7 @@ void control::navUpdate()
     // float t5 = uz;
 
 }
+
+void control::navStop() {
+    return;
+}

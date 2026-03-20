@@ -13,4 +13,5 @@ public:
 
     static void navUpdate();
 
+    static void navStop();
 };

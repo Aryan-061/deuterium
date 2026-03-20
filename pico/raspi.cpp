@@ -30,7 +30,7 @@ void raspi::init() {
     gpio_set_function(RASPI_RX, GPIO_FUNC_UART);
 }
 
-void raspi::update() {
+bool raspi::update() {
 
     while (uart_is_readable(RASPI_UARTID)) {
         switch (recstate) {
@@ -61,6 +61,7 @@ void raspi::update() {
                 }
                 recbuffindex = 0;
                 recstate = 0;
+                return true;
             }
             break;
 
@@ -69,4 +70,5 @@ void raspi::update() {
             recstate = 0;
         }
     }
+    return false;
 }
