@@ -6,8 +6,11 @@
 #include "structs.hpp"
 #include "config.hpp"
 
-class nav {
+class control {
 public:
 
-    static void update();
+    static void stbUpdate();
+
+    static void navUpdate();
+
 };

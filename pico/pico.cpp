@@ -9,10 +9,9 @@
 
 #include "structs.hpp"
 #include "imu.hpp"
-#include "stb.hpp"
+#include "control.hpp"
 #include "esc.hpp"
 #include "raspi.hpp"
-#include "nav.hpp"
 
 volatile bool stb_flag = false;
 struct repeating_timer control_timer;
@@ -59,10 +58,10 @@ int main(void) {
         if (stb_flag) {
             stb_flag = false;
             imu::update();
-            stb::update();
+            control::stbUpdate();
         }
 
-        nav::update();
+        control::navUpdate();
 
         printf("%d      %d      %d\n", throttle.VB, throttle.VR, throttle.VL);
 

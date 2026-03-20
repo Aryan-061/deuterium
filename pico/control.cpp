@@ -1,17 +1,29 @@
-#include "stb.hpp"
+#include "control.hpp"
 #include "structs.hpp"
 
 extern State state;
 extern Throttle throttle;
 
-const float dt = AUV_STB_LOOP_MS / 1000;   // 100 ms control loop
+//navigation
+struct PID {
+    float kp;
+    float ki;
+    float kd;
+    float prev;
+    float integral;
+};
+PID pidx = { 1.2, 0.01, 0.25, 0, 0 };
+PID pidy = { 1.2, 0.01, 0.25, 0, 0 };
+PID pidz = { 1.5, 0.02, 0.3, 0, 0 };
+PID pidyaw = { 2.5, 0.01, 0.3, 0, 0 };
 
+//stabalization
+const float dt = AUV_STB_LOOP_MS / 1000;
 //outer loop PID
 float Kp_ang = 5.0;
 float Ki_ang = 1.0;
 float rollInt = 0;
 float pitchInt = 0;
-
 //inner loop LQR
 float K_lqr[3][2] = {
   { 1.5, -1},
@@ -34,7 +46,25 @@ int clampDSHOT(int value) {
     return 48;
 }
 
-void stb::update() {
+float computePID(PID& p, float error, float dt)
+{
+    if (dt <= 0) return 0;
+
+    p.integral += error * dt;
+    p.integral = constrain(p.integral, -100, 100);
+
+    float derivative = (error - p.prev) / dt;
+
+    float output = p.kp * error +
+        p.ki * p.integral +
+        p.kd * derivative;
+
+    p.prev = error;
+
+    return output;
+}
+
+void control::stbUpdate() {
 
     rollInt += state.roll * dt;
     pitchInt += state.pitch * dt;
@@ -76,4 +106,29 @@ void stb::update() {
     throttle.VR = clampDSHOT(u_smooth[1] * 150);
     throttle.VB = clampDSHOT(u_smooth[2] * 150);
     // printf("%d      %d      %d\n", throttle.VL, throttle.VR, throttle.VB);
+}
+
+void control::navUpdate()
+{
+
+    if (abs(state.dx) < 0.05) state.dx = 0;
+    if (abs(state.dy) < 0.05) state.dy = 0;
+    if (abs(state.dz) < 0.05) state.dz = 0;
+
+    float ux = computePID(pidx, state.dx, dt);
+    float uy = computePID(pidy, state.dy, dt);
+    float uz = computePID(pidz, state.dz, dt);
+    float uyaw = computePID(pidyaw, state.dyaw, dt);
+
+    ux = constrain(ux, -300, 300);
+    uy = constrain(uy, -300, 300);
+    uz = constrain(uz, -300, 300);
+    uyaw = constrain(uyaw, -200, 200);
+
+    // float t1 = ux - uyaw;
+    // float t2 = ux + uyaw;
+    // float t3 = uz + uy;
+    // float t4 = uz - uy;
+    // float t5 = uz;
+
 }

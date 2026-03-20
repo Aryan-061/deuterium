@@ -38,10 +38,9 @@ pico_sdk_init()
 add_executable(pico 
     pico.cpp     
     imu.cpp
-    stb.cpp
+    control.cpp
     esc.cpp
     raspi.cpp
-    nav.cpp
     )
 
 pico_set_program_name(pico "pico")
