@@ -1,7 +1,10 @@
 #pragma once
 
-//stablization loop speed
-#define AUV_STB_LOOP_MS 10
+//stablization loop speed in milli seconds
+#define STB_LOOP_MS 10
+
+//time out for navigation comms to be sent by raspi mpu in micro seconds
+#define NAV_TIME_OUT_US 500000
 
 //BNO055
 #define BNO055_PORT i2c1

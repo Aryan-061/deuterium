@@ -49,7 +49,7 @@ int main(void) {
     printf("program initialised\n");
 
     add_repeating_timer_ms(
-        -AUV_STB_LOOP_MS,
+        -STB_LOOP_MS,
         control_timer_cb,
         NULL,
         &control_timer
@@ -70,7 +70,7 @@ int main(void) {
             nav_time_out = false;
             control::navUpdate();
         }
-        if (!nav_time_out && absolute_time_diff_us(last_nav_data_time, get_absolute_time()) > 500000) {
+        if (!nav_time_out && absolute_time_diff_us(last_nav_data_time, get_absolute_time()) > NAV_TIME_OUT_US) {
             control::navStop();
             nav_time_out = true;
         }

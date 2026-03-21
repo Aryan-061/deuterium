@@ -18,7 +18,7 @@ PID pidz = { 1.5, 0.02, 0.3, 0, 0 };
 PID pidyaw = { 2.5, 0.01, 0.3, 0, 0 };
 
 //stabalization
-const float dt = AUV_STB_LOOP_MS / 1000;
+const float dt = STB_LOOP_MS / 1000;
 //outer loop PID
 float Kp_ang = 5.0;
 float Ki_ang = 1.0;
